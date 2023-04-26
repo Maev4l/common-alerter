@@ -1,0 +1,7 @@
+{
+  "name": "alerting",
+  "version": "1.0.0",
+  "devDependencies": {
+    "serverless": "3.30.1"
+  }
+}

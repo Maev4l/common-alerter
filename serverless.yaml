@@ -1,0 +1,61 @@
+service: alerting
+plugins:
+  - serverless-go-plugin
+
+provider:
+  name: aws
+  architecture: arm64
+  runtime: provided.al2
+  versionFunctions: false
+  memorySize: 128
+  stage: dev
+  timeout: 30
+  region: eu-central-1
+  endpointType: REGIONAL
+  profile: serverless-admin-profile
+  logRetentionInDays: 7
+  iam:
+    role:
+      name: alerting-lambda-role
+
+  tags:
+    application: "alerting"
+    owner: "serverless"
+  stackTags:
+    application: "alerting"
+    owner: "serverless"
+  deploymentBucket:
+    blockPublicAccess: true
+    tags:
+      application: "alerting"
+      owner: "serverless"
+  environment:
+    SLACK_TOKEN: ${ssm(raw):slack.alerting.token}
+    SLACK_CHANNEL_ID: C0544QDSXKQ
+custom:
+  go:
+    supportedRuntimes: provided.al2
+    buildProvidedRuntimeAsBootstrap: true
+    cmd: GOARCH=arm64 GOOS=linux go build -ldflags="-s -w"
+
+functions:
+  push-alert:
+    handler: cmd/main.go
+    name: common-push-alert
+    events:
+      - sns:
+          arn: !Ref MessageTopic
+          topicName: alerting-events
+
+resources:
+  Resources:
+    MessageTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: Alerting
+        TopicName: alerting-events
+        Tags:
+          - Key: application
+            Value: alerting
+          - Key: owner
+            Value: serverless
